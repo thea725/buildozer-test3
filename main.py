@@ -25,7 +25,7 @@ class KivyCamera(Image):
 
 class CamApp(App):
     def build(self):
-        self.capture = cv2.VideoCapture("videos/vid4.mp4")
+        self.capture = cv2.VideoCapture("./vid4.mp4")
         self.my_camera = KivyCamera(capture=self.capture, fps=30)
         return self.my_camera
 
