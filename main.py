@@ -1,43 +1,47 @@
-import kivy
 from kivy.app import App
-from kivy.uix.label import Label
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.image import Image
+from kivy.graphics.texture import Texture
 import cv2
-import numpy as np
-from multiprocessing import Process
-  
-class MyLabelApp(App):
+from kivy.clock import Clock
+
+from os import environ
+from sys import platform as _sys_platform
+
+def platform():
+    if "ANDROID_ARGUMENT" in environ:
+        return "android"
+    elif _sys_platform in ('win32', 'cygwin'):
+        return "win"
+
+class ImageApp(App):
     def build(self):
-        caption = cv2.VideoCapture(0,cv2.CAP_V4L2)
-        if not caption.isOpened():
-            lbl2 = Label(text ="cannot open camera 0")
-            return lbl2
-            caption.release()
-        else:
-            caption.release()
-        caption1 = cv2.VideoCapture(1,cv2.CAP_V4L2)
-        if not caption1.isOpened():
-            lbl3 = Label(text ="cannot open camera 1")
-            return lbl3
-            caption1.release()
-        else:
-            caption1.release()
-        lbl = Label(text ="Android Two Cam Is running, Close window and save ouput.avi locally!!! ")
-        return lbl
-def cap():
-    cap = cv2.VideoCapture(0,cv2.CAP_V4L2)
-    cap1 = cv2.VideoCapture(1,cv2.CAP_V4L2)
-    out = cv2.VideoWriter('/storage/emulated/0/dcim/output.avi',cv2.VideoWriter_fourcc(*'XVID'), cap.get(cv2.CAP_PROP_FPS), (1440,720))
-    while(cap.isOpened()):
-        ret, frame = cap.read()
-        ret1, frame1 = cap1.read()
-        if ret == True:
-            reframe = cv2.resize(frame,(720, 720), interpolation = cv2.INTER_AREA)
-            reframe1 = cv2.resize(frame1,(720, 720), interpolation = cv2.INTER_AREA)
-            both = np.column_stack((reframe, reframe1))
-            out.write(both) 
-if __name__ == "__main__":
-    p1 = Process(target=cap)
-    p1.start()
-    label = MyLabelApp()
-    label.run()
-    label.on_stop(p1.terminate())
+        self.layout = BoxLayout(orientation='vertical')
+        self.image = Image()
+        self.layout.add_widget(self.image)
+
+        # Atur pemanggilan fungsi update setiap 1/30 detik
+        Clock.schedule_interval(self.update, 1.0 / 30.0)
+
+        return self.layout
+
+    def update(self, *args):
+        # Baca gambar menggunakan OpenCV
+        if platform() == "android":
+            path = "/data/data/org.test.recycleai/files/app/image.jpg"
+        elif platform() == "win":
+            path = "image.jpg"
+        frame = cv2.imread(path)
+
+        # Ubah warna dari BGR ke RGB
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # Buat tekstur Kivy dari citra OpenCV
+        texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='rgb')
+        texture.blit_buffer(frame_rgb.tostring(), colorfmt='rgb', bufferfmt='ubyte')
+
+        # Tampilkan gambar di aplikasi
+        self.image.texture = texture
+
+if __name__ == '__main__':
+    ImageApp().run()
