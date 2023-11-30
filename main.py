@@ -3,7 +3,6 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
 from kivy.graphics.texture import Texture
 import cv2
-import numpy as np
 from kivy.clock import Clock
 
 from os import environ
@@ -37,13 +36,13 @@ class ImageApp(App):
         ret, frame = self.cap.read()
         if not ret:
             return
-        
+
         # Ubah warna dari BGR ke RGB
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # Buat tekstur Kivy dari citra OpenCV
         texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='rgb')
-        texture.blit_buffer(cv2.flip(frame_rgb, 0).tobytes(), colorfmt='rgb', bufferfmt='ubyte')
+        texture.blit_buffer(cv2.flip(frame_rgb, 0).tostring(), colorfmt='rgb', bufferfmt='ubyte')
 
         # Tampilkan gambar di aplikasi
         self.image.texture = texture
