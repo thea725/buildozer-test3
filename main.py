@@ -41,38 +41,38 @@ def midpoint(ptA, ptB):
     return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
 pixelsPerMetric = 27.9394
 
-def defisheye(img):
-    DIM = img.shape[:2][::-1]
-    balance = 0
-    K = np.array([[1122.4054962744387, 0.0, 1006.1145835723129], [0.0, 1129.0933478170655, 527.4670240270237], [0.0, 0.0, 1.0]])
-    D = np.array([[-0.21503184621950375], [0.7441653867540186], [-1.3654196840660953], [0.8759864071569387]])
-    dim1 = [1920, 1080]
-    dim2 = [1920, 1080]
-    dim3 = [1920, 1080]
+# def defisheye(img):
+#     DIM = img.shape[:2][::-1]
+#     balance = 0
+#     K = np.array([[1122.4054962744387, 0.0, 1006.1145835723129], [0.0, 1129.0933478170655, 527.4670240270237], [0.0, 0.0, 1.0]])
+#     D = np.array([[-0.21503184621950375], [0.7441653867540186], [-1.3654196840660953], [0.8759864071569387]])
+#     dim1 = [1920, 1080]
+#     dim2 = [1920, 1080]
+#     dim3 = [1920, 1080]
 
-    assert dim1[0]/dim1[1] == DIM[0]/DIM[1], "Image to undistort needs to have same aspect ratio as the ones used in calibration"
+#     assert dim1[0]/dim1[1] == DIM[0]/DIM[1], "Image to undistort needs to have same aspect ratio as the ones used in calibration"
 
-    scaled_K = K * dim1[0] / DIM[0]  # The values of K is to scale with image dimension.
-    scaled_K[2][2] = 1.0
+#     scaled_K = K * dim1[0] / DIM[0]  # The values of K is to scale with image dimension.
+#     scaled_K[2][2] = 1.0
 
-    new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(scaled_K, D, dim2, np.eye(3), balance=balance, fov_scale=1)
-    map1, map2 = cv2.fisheye.initUndistortRectifyMap(scaled_K, D, np.eye(3), new_K, dim3, cv2.CV_16SC2)
+#     new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(scaled_K, D, dim2, np.eye(3), balance=balance, fov_scale=1)
+#     map1, map2 = cv2.fisheye.initUndistortRectifyMap(scaled_K, D, np.eye(3), new_K, dim3, cv2.CV_16SC2)
 
-    dst = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+#     dst = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
 
-    return dst
-# def normalization(img):
-#     gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-#     normalized_image = cv2.normalize(gray_image, None, 0, 255, cv2.NORM_MINMAX)
-#     clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(20, 20))
-#     enhanced_image = clahe.apply(normalized_image)
-#     equ = cv2.equalizeHist(enhanced_image)
+#     return dst
+def normalization(img):
+    gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    normalized_image = cv2.normalize(gray_image, None, 0, 255, cv2.NORM_MINMAX)
+    clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(20, 20))
+    enhanced_image = clahe.apply(normalized_image)
+    equ = cv2.equalizeHist(enhanced_image)
     
-#     upper_black = 75
-#     equ[np.where(equ <= upper_black)] = 0
-#     equ[np.where(equ <= upper_black)] = 0
+    upper_black = 75
+    equ[np.where(equ <= upper_black)] = 0
+    equ[np.where(equ <= upper_black)] = 0
 
-#     return equ
+    return equ
 # def edge_detection(frame, img):
 #     contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
@@ -167,15 +167,15 @@ class ImageApp(App):
         ret, frame = self.cap.read()
         if not ret:
             return
-        normal = defisheye(frame)
-        # enhance = normalization(normal)
+        # normal = defisheye(frame)
+        enhance = normalization(frame)#normal)
         # result = edge_detection(normal, enhance)
         
         # Ubah warna dari BGR ke RGB
-        frame_rgb = cv2.cvtColor(normal, cv2.COLOR_BGR2RGB)
+        frame_rgb = cv2.cvtColor(enhance, cv2.COLOR_BGR2RGB)
 
         # Buat tekstur Kivy dari citra OpenCV
-        texture = Texture.create(size=(normal.shape[1], normal.shape[0]), colorfmt='rgb')
+        texture = Texture.create(size=(enhance.shape[1], enhance.shape[0]), colorfmt='rgb')
         texture.blit_buffer(cv2.flip(frame_rgb, 0).tobytes(), colorfmt='rgb', bufferfmt='ubyte')
 
         # Tampilkan gambar di aplikasi
