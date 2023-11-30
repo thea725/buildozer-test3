@@ -176,7 +176,7 @@ class ImageApp(App):
 
         # Buat tekstur Kivy dari citra OpenCV
         texture = Texture.create(size=(normal.shape[1], normal.shape[0]), colorfmt='rgb')
-        texture.blit_buffer(cv2.flip(frame_rgb, 0).tostring(), colorfmt='rgb', bufferfmt='ubyte')
+        texture.blit_buffer(cv2.flip(frame_rgb, 0).tobytes(), colorfmt='rgb', bufferfmt='ubyte')
 
         # Tampilkan gambar di aplikasi
         self.image.texture = texture
