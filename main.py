@@ -8,51 +8,44 @@ from kivy.clock import Clock
 from os import environ
 from sys import platform as _sys_platform
 
-pixelsPerMetric = 27.9394
 def platform():
     if "ANDROID_ARGUMENT" in environ:
         return "android"
     elif _sys_platform in ('win32', 'cygwin'):
         return "win"
 
-class VideoApp(App):
+class ImageApp(App):
     def build(self):
+        self.layout = BoxLayout(orientation='vertical')
+        self.image = Image()
+        self.layout.add_widget(self.image)
+
         if platform() == "android":
-            path = '/data/data/org.test.recycleai/files/app/vid4.mp4'
+            path = "/data/data/org.test.recycleai/files/app/vid4.mp4"
         elif platform() == "win":
             path = "vid4.mp4"
         self.cap = cv2.VideoCapture(path)
-        if not self.cap.isOpened():
-            print("Error: Could not open video.")
-            return
 
-        self.container = BoxLayout(orientation='vertical')
-        self.image = Image()
-        self.container.add_widget(self.image)
+        # Atur pemanggilan fungsi update setiap 1/30 detik
+        Clock.schedule_interval(self.update, 1.0 / 30.0)
 
-        Clock.schedule_interval(self.update, 1.0 / 30.0)  # Update every 1/30th of a second
+        return self.layout
 
-        return self.container
-
-    def update(self, dt):
+    def update(self, *args):
+        # Baca gambar menggunakan OpenCV
         ret, frame = self.cap.read()
         if not ret:
-            print("End of video.")
             return
 
-        # normal = self.defisheye(frame)
-        # enhance = self.normalization(normal)
-        # result = self.edge_detection(normal, enhance)
+        # Ubah warna dari BGR ke RGB
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
-        frame_texture = self.texture_from_frame(frame)
-        self.image.texture = frame_texture
-    
-    def texture_from_frame(self, frame):
-        buf = cv2.flip(frame, 0).tostring()
-        texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
-        texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
-        return texture
+        # Buat tekstur Kivy dari citra OpenCV
+        texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='rgb')
+        texture.blit_buffer(cv2.flip(frame_rgb, 0).tostring(), colorfmt='rgb', bufferfmt='ubyte')
+
+        # Tampilkan gambar di aplikasi
+        self.image.texture = texture
 
 if __name__ == '__main__':
-    VideoApp().run()
+    ImageApp().run()
