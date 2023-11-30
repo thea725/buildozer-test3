@@ -8,40 +8,51 @@ from kivy.clock import Clock
 from os import environ
 from sys import platform as _sys_platform
 
+pixelsPerMetric = 27.9394
 def platform():
     if "ANDROID_ARGUMENT" in environ:
         return "android"
     elif _sys_platform in ('win32', 'cygwin'):
         return "win"
 
-class ImageApp(App):
+class VideoApp(App):
     def build(self):
-        self.layout = BoxLayout(orientation='vertical')
-        self.image = Image()
-        self.layout.add_widget(self.image)
-
-        # Atur pemanggilan fungsi update setiap 1/30 detik
-        Clock.schedule_interval(self.update, 1.0 / 30.0)
-
-        return self.layout
-
-    def update(self, *args):
-        # Baca gambar menggunakan OpenCV
         if platform() == "android":
-            path = "/data/data/org.test.recycleai/files/app/image.jpg"
+            path = '/data/data/org.test.recycleai/files/app/vid4.mp4'
         elif platform() == "win":
-            path = "image.jpg"
-        frame = cv2.imread(path)
+            path = "vid4.mp4"
+        self.cap = cv2.VideoCapture(path)
+        if not self.cap.isOpened():
+            print("Error: Could not open video.")
+            return
 
-        # Ubah warna dari BGR ke RGB
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        self.container = BoxLayout(orientation='vertical')
+        self.image = Image()
+        self.container.add_widget(self.image)
 
-        # Buat tekstur Kivy dari citra OpenCV
-        texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='rgb')
-        texture.blit_buffer(frame_rgb.tostring(), colorfmt='rgb', bufferfmt='ubyte')
+        Clock.schedule_interval(self.update, 1.0 / 30.0)  # Update every 1/30th of a second
 
-        # Tampilkan gambar di aplikasi
-        self.image.texture = texture
+        return self.container
+
+    def update(self, dt):
+        ret, frame = self.cap.read()
+        if not ret:
+            print("End of video.")
+            return
+
+        # normal = self.defisheye(frame)
+        # enhance = self.normalization(normal)
+        # result = self.edge_detection(normal, enhance)
+
+        frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+        frame_texture = self.texture_from_frame(frame)
+        self.image.texture = frame_texture
+    
+    def texture_from_frame(self, frame):
+        buf = cv2.flip(frame, 0).tostring()
+        texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
+        texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
+        return texture
 
 if __name__ == '__main__':
-    ImageApp().run()
+    VideoApp().run()
