@@ -162,7 +162,8 @@ class ImageApp(App):
             return
         normal = defisheye(frame)
         enhance = normalization(normal)
-        result = edge_detection(cv2.cvtColor(normal, cv2.COLOR_BGR2RGB), enhance)
+        # result = edge_detection(cv2.cvtColor(normal, cv2.COLOR_BGR2RGB), enhance)
+        result = edge_detection(normal, enhance)
 
         # Buat tekstur Kivy dari citra OpenCV
         texture = Texture.create(size=(result.shape[1], result.shape[0]), colorfmt='rgb')
