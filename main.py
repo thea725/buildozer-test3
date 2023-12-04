@@ -162,14 +162,11 @@ class ImageApp(App):
             return
         normal = defisheye(frame)
         enhance = normalization(normal)
-        result = edge_detection(normal, enhance)
-        
-        # Ubah warna dari BGR ke RGB
-        frame_rgb = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+        result = edge_detection(cv2.cvtColor(normal, cv2.COLOR_BGR2RGB), enhance)
 
         # Buat tekstur Kivy dari citra OpenCV
-        texture = Texture.create(size=(normal.shape[1], normal.shape[0]), colorfmt='rgb')
-        texture.blit_buffer(cv2.flip(frame_rgb, 0).tobytes(), colorfmt='rgb', bufferfmt='ubyte')
+        texture = Texture.create(size=(result.shape[1], result.shape[0]), colorfmt='rgb')
+        texture.blit_buffer(cv2.flip(result, 0).tobytes(), colorfmt='rgb', bufferfmt='ubyte')
 
         # Tampilkan gambar di aplikasi
         self.image.texture = texture
