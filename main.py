@@ -39,8 +39,20 @@ def order_points(pts):
     return rect
 def midpoint(ptA, ptB):
     return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
-pixelsPerMetric = 27.9394
+pixelsPerMetric = 16.0815
 
+def defisheye(img):
+    mtx = np.array([[1122.4054962744387, 0.0, 1006.1145835723129],
+                    [0.0, 1129.0933478170655, 527.4670240270237],
+                    [0.0, 0.0, 1.0]])
+    dist = np.array([-0.46536784, 0.32895579, 0.0064085, 0.00428199, -0.11151939])
+    h, w = img.shape[:2]
+    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+    dst = cv2.undistort(img, mtx, dist, None, newcameramtx)
+    x, y, w, h = roi
+    dst = dst[y : y + h, x : x + w]
+
+    return dst
 def normalization(img):
     gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     normalized_image = cv2.normalize(gray_image, None, 0, 255, cv2.NORM_MINMAX)
@@ -94,6 +106,8 @@ def edge_detection(frame, img):
 
         # if (dimA>5 and dimB>14) and (dimA<15 and dimB<37): #ukuran botol di antara 5-5 dan 14-37cm
         if dimA>1 and dimB>10 and (int(dimB/dimA) < 4 and int(dimB/dimA) > 2):
+            print(dB)
+            print(dimB)
         # if True:
             # print(dB)
             # print("-",dimB)
@@ -124,7 +138,6 @@ def edge_detection(frame, img):
                         0.65, (255, 255, 255), 2)
     return orig
 
-
 class ImageApp(App):
     def build(self):
         self.layout = BoxLayout(orientation='vertical')
@@ -147,14 +160,15 @@ class ImageApp(App):
         ret, frame = self.cap.read()
         if not ret:
             return
-        enhance = normalization(frame)
-        result = edge_detection(frame, enhance)
+        normal = defisheye(frame)
+        enhance = normalization(normal)
+        result = edge_detection(normal, enhance)
         
         # Ubah warna dari BGR ke RGB
         frame_rgb = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
 
         # Buat tekstur Kivy dari citra OpenCV
-        texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='rgb')
+        texture = Texture.create(size=(normal.shape[1], normal.shape[0]), colorfmt='rgb')
         texture.blit_buffer(cv2.flip(frame_rgb, 0).tobytes(), colorfmt='rgb', bufferfmt='ubyte')
 
         # Tampilkan gambar di aplikasi
