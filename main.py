@@ -1,4 +1,3 @@
-import os
 import kivy
 import numpy as np
 from kivy.app import App
@@ -10,7 +9,7 @@ class MyApp(App):
 
     def build(self):
         model = TensorFlowModel()
-        model.load(os.path.join(os.getcwd(), 'model.tflite'))
+        model.load("/data/data/org.test.myapp/files/app/model.tflite")
         np.random.seed(42)
         x = np.array(np.random.random_sample((1, 28, 28)), np.float32)
         y = model.pred(x)
