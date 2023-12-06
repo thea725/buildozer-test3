@@ -1,24 +1,68 @@
-import kivy
-import numpy as np
 from kivy.app import App
-from kivy.uix.label import Label
-from model import TensorFlowModel
+from kivy.factory import Factory as F
+from kivy.lang import Builder
+from kivy.uix.boxlayout import BoxLayout
+from kivy.properties import StringProperty
+from kivy.clock import Clock, mainthread
+from time import time
+import os
+
+Builder.load_string('''
+<CameraClassifier@RelativeLayout>:
+    orientation: 'vertical'
+    Camera:
+        id: camera
+        resolution: (1920, 1080)
+        play: False
+    Label:
+        text: app.normalized_result
+        text_size: self.width - dp(48), self.height - dp(48)
+        y: dp(24)
+        markup: True
+''')
 
 
-class MyApp(App):
+class TestCamera(App):
+
+    normalized_result = StringProperty("")
 
     def build(self):
-        model = TensorFlowModel()
-        # model.load("/data/data/org.test.myapp/files/app/model.tflite")
-        model.load(os.path.join(os.getcwd(), 'model.tflite'))
-        np.random.seed(42)
-        x = np.array(np.random.random_sample((1, 28, 28)), np.float32)
-        y = model.pred(x)
-        # result should be
-        # 0.01647118,  1.0278152 , -0.7065112 , -1.0278157 ,  0.12216613,
-        # 0.37980393,  0.5839217 , -0.04283606, -0.04240461, -0.58534086
-        return Label(text=f'{y}')
+        Clock.schedule_once(self.start_camera, .5)
+        return F.CameraClassifier()
 
+    def start_camera(self, *largs):
+        self.root.ids.camera.play = True
+        self.root.ids.camera._camera.bind(on_texture=self.on_camera_texture)
+        from tflwrapper.tfl_android import TFLWrapperAndroid
+        self.tflite = TFLWrapperAndroid(
+            (os.path.join(os.getcwd(), 'data/pba_quantized/model.tflite')),
+            (os.path.join(os.getcwd(), 'data/pba_quantized/labels.txt')),
+            on_detect=self.on_tflite_detect)
 
-if __name__ == '__main__':
-    MyApp().run()
+    def on_camera_texture(self, camera):
+        pixels = camera._fbo.pixels
+        w, h = camera.resolution
+        self.tflite.async_detect(pixels, w, h)
+
+    @mainthread
+    def on_tflite_detect(self, result):
+        self.result = result
+        labels = self.tflite.get_labels_with_value(result)
+        textresult = []
+        for label, value in labels:
+            text = f"{value:.05f}: {label}"
+            if value > .8:
+                text = f"[color=44FF44]{text}[/color]"
+            else:
+                text = f"[color=FF4444]{text}[/color]"
+            textresult.append(text)
+        self.normalized_result = "\n".join(textresult)
+
+    def detect(self, *largs):
+        timer = time()
+        camera = self.root.ids.camera._camera
+        w, h = camera.resolution
+        pixels = camera._fbo.pixels
+        self.result = self.tfl.detect(pixels, w, h)
+
+TestCamera().run()
