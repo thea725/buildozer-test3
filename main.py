@@ -9,7 +9,7 @@ from ultralytics import YOLO
 import os
 from sys import platform as _sys_platform
 
-model = YOLO('best.pt')
+model = YOLO(os.path.join(os.getcwd(), 'best.pt'))
 
 class ImageApp(App):
     def build(self):
